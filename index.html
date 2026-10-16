@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cinque Menu Trainer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Barlow:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: phone-first single column; sticky header with mode tabs; recipe cards styled like the bar's laminated sheet (black title bar, ruled lines). */
+:root {
+  --bg: #f2f1ef;
+  --surface: #ffffff;
+  --ink: #161312;
+  --muted: #6d6662;
+  --line: #dcd8d5;
+  --red: #e30019;
+  --bar: #161312;
+  --bar-fg: #ffffff;
+  --sel-bg: #161312;
+  --sel-fg: #ffffff;
+  --ok: #1d7f46;
+  --ok-soft: #e3f3ea;
+  --bad: #b3261e;
+  --bad-soft: #fbe6e4;
+  --font-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", Impact, sans-serif;
+  --font-body: "Barlow", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121010; --surface: #1c1918; --ink: #f2eeec; --muted: #a8a09b; --line: #36312f;
+    --red: #ff3347; --bar: #2c2725; --bar-fg: #ffffff; --sel-bg: #f2eeec; --sel-fg: #161312;
+    --ok: #52c785; --ok-soft: #173325; --bad: #ff7a72; --bad-soft: #3a1b19;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121010; --surface: #1c1918; --ink: #f2eeec; --muted: #a8a09b; --line: #36312f;
+  --red: #ff3347; --bar: #2c2725; --bar-fg: #ffffff; --sel-bg: #f2eeec; --sel-fg: #161312;
+  --ok: #52c785; --ok-soft: #173325; --bad: #ff7a72; --bad-soft: #3a1b19;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.45;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
+
+/* Header */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10;
+  background: var(--bar); color: var(--bar-fg);
+  padding-inline: 16px;
+}
+.top-in { max-width: 720px; margin: 0 auto; }
+.brand { display: flex; align-items: center; gap: 10px; padding-block: 10px 6px; }
+.brand img { width: 36px; height: 36px; flex: none; }
+.brand-name { font-family: var(--font-display); font-weight: 800; font-size: 22px; letter-spacing: .04em; text-transform: uppercase; line-height: 1; }
+.brand-name small { display: block; font-family: var(--font-body); font-weight: 500; font-size: 12px; letter-spacing: .12em; opacity: .7; margin-top: 3px; }
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+.tab {
+  background: none; border: 0; color: var(--bar-fg); opacity: .65;
+  padding: 10px 4px 12px; font-family: var(--font-display); font-weight: 800; font-size: 19px;
+  letter-spacing: .06em; text-transform: uppercase; border-bottom: 4px solid transparent;
+}
+.tab[aria-selected="true"] { opacity: 1; border-bottom-color: var(--red); }
+
+/* Page */
+.wrap { max-width: 720px; margin: 0 auto; padding-inline: 16px; padding-block: 18px 48px; }
+section { display: grid; gap: 16px; }
+.intro { margin: 0; color: var(--muted); font-size: 15px; }
+
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 4px; gap: 4px; }
+.seg button { border: 0; background: none; border-radius: 7px; padding: 9px; font-weight: 600; }
+.seg button.on { background: var(--sel-bg); color: var(--sel-fg); }
+
+.btn {
+  min-height: 46px; padding: 10px 18px; border-radius: 10px; border: 2px solid var(--sel-bg);
+  background: var(--sel-bg); color: var(--sel-fg); font-weight: 700; font-size: 16px;
+}
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.red { background: var(--red); border-color: var(--red); color: #fff; }
+.btn:disabled { opacity: .4; cursor: default; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; }
+.row > .btn { flex: 1 1 0; }
+
+/* Recipe card, modelled on the bar sheet */
+.rc { background: var(--surface); border: 2px solid var(--bar); border-radius: 4px; overflow: hidden; }
+.rc-h {
+  background: var(--bar); color: var(--bar-fg); padding: 6px 12px 5px;
+  font-family: var(--font-display); font-weight: 800; font-size: 20px; letter-spacing: .06em; text-transform: uppercase;
+}
+.rc-l { list-style: none; margin: 0; padding: 4px 12px; }
+.rc-l li { display: flex; justify-content: space-between; gap: 12px; padding-block: 7px; border-bottom: 1px solid var(--line); font-weight: 600; }
+.rc-l li:last-child { border-bottom: 0; }
+.amt { font-variant-numeric: tabular-nums; color: var(--muted); font-weight: 500; white-space: nowrap; }
+.rc-n { margin: 0; padding: 8px 12px 10px; border-top: 1px dashed var(--line); font-size: 14px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.rc-n b { font-weight: 700; text-transform: uppercase; letter-spacing: .08em; font-size: 11px; }
+.tag { border: 1px solid var(--line); border-radius: 999px; padding: 2px 10px; color: var(--ink); }
+
+/* Study */
+.flash {
+  background: var(--surface); border: 2px solid var(--bar); border-radius: 6px; min-height: 300px;
+  display: grid; align-content: center; gap: 14px; padding: 22px 18px; text-align: center; cursor: pointer;
+}
+.flash-count { font-size: 13px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+.flash-name { margin: 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(40px, 12vw, 64px); line-height: .95; text-transform: uppercase; letter-spacing: .02em; text-wrap: balance; }
+.flash .rc { text-align: left; }
+.hint { margin: 0; color: var(--muted); font-size: 14px; }
+.search { width: 100%; min-height: 48px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); font-size: 16px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); gap: 12px; align-items: start; }
+.empty { color: var(--muted); text-align: center; padding: 24px 0; }
+
+/* Build */
+.pick { display: grid; grid-template-columns: 1fr auto; gap: 10px; }
+.pick select { min-height: 46px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); padding: 8px 10px; min-width: 0; }
+.dname { margin: 0; font-family: var(--font-display); font-weight: 900; font-size: clamp(34px, 10vw, 52px); line-height: .95; text-transform: uppercase; text-wrap: balance; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 12px; }
+.step-h { display: flex; align-items: baseline; gap: 10px; font-weight: 700; font-size: 17px; }
+.step-n { font-family: var(--font-display); font-weight: 900; color: var(--red); font-size: 15px; letter-spacing: .1em; text-transform: uppercase; }
+.sub { margin: -6px 0 0; color: var(--muted); font-size: 14px; }
+.chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 140px), 1fr)); gap: 8px; }
+.chip {
+  min-height: 46px; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--line);
+  background: var(--bg); font-weight: 600; font-size: 15px; text-align: left; line-height: 1.2;
+}
+.chip.sel { background: var(--sel-bg); color: var(--sel-fg); border-color: var(--sel-bg); }
+.chip.ok { background: var(--ok-soft); border-color: var(--ok); color: var(--ink); }
+.chip.missed { background: transparent; border: 2px dashed var(--ok); color: var(--ok); }
+.chip.wrong { background: var(--bad-soft); border-color: var(--bad); color: var(--ink); text-decoration: line-through; }
+.chip.dim { opacity: .45; }
+.chip:disabled { cursor: default; }
+.chip .mk { float: right; font-weight: 700; margin-left: 6px; text-decoration: none; display: inline-block; }
+.fb { margin: 0; padding: 10px 12px; border-radius: 8px; font-size: 15px; }
+.fb.ok { background: var(--ok-soft); }
+.fb.bad { background: var(--bad-soft); }
+.arow { display: grid; gap: 8px; padding-block: 10px; border-top: 1px solid var(--line); }
+.arow:first-of-type { border-top: 0; padding-top: 0; }
+.aname { font-weight: 700; }
+.abtns { display: flex; flex-wrap: wrap; gap: 6px; }
+.ab {
+  min-width: 52px; min-height: 40px; padding: 6px 10px; border-radius: 8px; border: 1.5px solid var(--line);
+  background: var(--bg); font-weight: 600; font-size: 14px; font-variant-numeric: tabular-nums;
+}
+.ab.sel { background: var(--sel-bg); color: var(--sel-fg); border-color: var(--sel-bg); }
+.ares { font-size: 15px; padding: 8px 10px; border-radius: 8px; }
+.ares.ok { background: var(--ok-soft); }
+.ares.bad { background: var(--bad-soft); }
+
+/* Quiz */
+.qcard { background: var(--surface); border: 2px solid var(--bar); border-radius: 6px; padding: 18px 16px; display: grid; gap: 14px; }
+.qkind { font-size: 12px; color: var(--muted); letter-spacing: .12em; text-transform: uppercase; font-weight: 600; }
+.qtext { margin: 0; font-size: 21px; font-weight: 600; line-height: 1.3; text-wrap: balance; }
+.qtext b { font-family: var(--font-display); font-weight: 900; font-size: 1.15em; text-transform: uppercase; letter-spacing: .02em; }
+.qlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.qlist li { padding: 6px 10px; background: var(--bg); border-radius: 6px; font-weight: 600; display: flex; justify-content: space-between; gap: 10px; }
+.opts { display: grid; gap: 8px; }
+.opt {
+  min-height: 52px; padding: 10px 14px; border-radius: 10px; border: 1.5px solid var(--line);
+  background: var(--bg); text-align: left; font-weight: 600; font-size: 17px;
+}
+.opt.ok { background: var(--ok-soft); border-color: var(--ok); }
+.opt.wrong { background: var(--bad-soft); border-color: var(--bad); }
+.opt:disabled { cursor: default; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .chip, .ab, .opt, .btn, .tab { transition: background-color .15s, border-color .15s, opacity .15s; }
+}
+</style>
+
+</head>
+<body style="margin:0">
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <img src="data:image/png;base64,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" alt="Cinquecento logo" width="36" height="36">
+      <div class="brand-name">Cinque Menu Trainer<small>Cocktail recipes · 51 drinks</small></div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" id="tab-study" data-mode="study" aria-selected="true">Study</button>
+      <button class="tab" role="tab" id="tab-build" data-mode="build" aria-selected="false">Build</button>
+      <button class="tab" role="tab" id="tab-quiz" data-mode="quiz" aria-selected="false">Quiz</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <section id="study">
+    <div class="seg">
+      <button id="s-cards" class="on">Flashcards</button>
+      <button id="s-menu">Full menu</button>
+    </div>
+    <div id="cardsView" style="display:grid;gap:14px">
+      <div class="flash" id="flash" role="button" tabindex="0" aria-live="polite">
+        <div class="flash-count" id="flashCount"></div>
+        <h2 class="flash-name" id="flashName"></h2>
+        <div id="flashBody" hidden></div>
+        <p class="hint" id="flashHint">Say the recipe, then tap to check</p>
+      </div>
+      <div class="row">
+        <button id="prev" class="btn ghost">Previous</button>
+        <button id="shuffle" class="btn ghost">Shuffle</button>
+        <button id="next" class="btn">Next</button>
+      </div>
+    </div>
+    <div id="menuView" hidden style="display:grid;gap:14px">
+      <input id="search" class="search" type="search" placeholder="Search drinks or ingredients" autocomplete="off">
+      <div id="menuGrid" class="grid"></div>
+    </div>
+  </section>
+
+  <section id="build" hidden>
+    <p class="intro">Pick the ingredients, then set each amount. Rims, garnishes and method are shown at the end.</p>
+    <div class="pick">
+      <select id="bSelect" aria-label="Choose a drink"></select>
+      <button id="bRandom" class="btn red">Random</button>
+    </div>
+    <div id="bStage" style="display:grid;gap:14px"></div>
+  </section>
+
+  <section id="quiz" hidden>
+    <div id="qStage" style="display:grid;gap:14px"></div>
+  </section>
+</main>
+
+<script>
+// ---------- Recipe data ----------
+// [name, [[display, amount, sheetText?, matchKey?], ...], [show-only notes]]
+// amount: number (ml) | "top" | "dash" | "drops" | "squeeze" | null (ingredient only, no amount quizzed)
+const RAW = [
+  ["Apple Martini", [["Vodka",15],["Apple Liqueur",30],["Lime Juice",5],["Ginger Ale","top"]]],
+  ["Around the World", [["Gin",45],["Get 27",15],["Pineapple Juice","top"]], ["Cherry garnish"]],
+  ["Baileys Berry", [["Baileys",30],["Strawberry",15],["Milk","top"]]],
+  ["Baileys Espresso", [["Vodka",15],["Baileys",30],["Iced Coffee","top"]]],
+  ["Bananatini", [["Vodka",15],["Banana",30],["Milk","top"]]],
+  ["Blueberrytini", [["Vodka",15],["Blueberry",30],["Blue Curacao",5],["Milk","top"]]],
+  ["Butterscotch", [["Vodka",15],["Butterscotch",30],["Milk","top"]]],
+  ["Cappuccinotini", [["Vodka",10],["Kahlua",10],["Baileys",10],["Frangelico",10],["Milk","top"]], ["Cinnamon powder on top"]],
+  ["Cherry Blossom", [["Cherry Brandy",30],["Triple Sec",15],["Lemon Juice",5],["Cranberry Juice","top"]]],
+  ["Chocolate Martini", [["Vodka",15],["Cacao Brown",30],["Milk","top"]]],
+  ["Cinque House", [["Vodka",15],["Mangoyan",30],["Peachtree",15,null,"Peach"],["Orange Juice","top"],["Cranberry Juice","top"]]],
+  ["Classic Gin", [["Gin",90],["Dry Vermouth",15],["Olive",null]]],
+  ["Classic Vodka", [["Vodka",90],["Dry Vermouth",15],["Olive",null]]],
+  ["Cosmopolitan", [["Vodka",30],["Triple Sec",15],["Lime Juice",5],["Cranberry Juice","top"]]],
+  ["Deep Blue Sea", [["Vodka",30],["Blue Curacao",15],["Pineapple Juice","top"],["Lime Juice",5]]],
+  ["Dirty Martini", [["Vodka",100],["Olive Brine",null]]],
+  ["Dyldo", [["Vodka",30],["Vanilla","drops","3–5 drops"],["Lime Juice",5],["Ginger Ale","top"]], ["Stir"]],
+  ["Espresso Martini", [["Vodka",30],["Kahlua",15],["Iced Coffee","top"]]],
+  ["French Lychee", [["Vodka",15],["Lychee",30],["Cassis",10],["Pineapple Juice","top"],["Cranberry Juice","top"]]],
+  ["Fruit Mega Mix", [["Peach",15],["Banana",15],["Melon",15],["Orange Juice","top"]]],
+  ["Gimlet", [["Gin",90],["Lime Juice",15]]],
+  ["Grasshopper", [["Vodka",15],["White Cacao",15],["Get 27",15],["Milk","top"]]],
+  ["Hubba Bubba", [["Kahlua",20],["Banana",15],["Triple Sec",10],["Milk","top"]], ["Grenadine sugar rim"]],
+  ["James Bond", [["Gin",60],["Vodka",60],["Cinzano Bianco",15]], ["Lemon peel twist"]],
+  ["Lemon Drop", [["Vodka",15],["Citron Jenever",20],["Lemon Juice",15],["Grapefruit Juice","top"]], ["Sugar rim"]],
+  ["Mai Tai", [["Bacardi",15],["Myers",15],["Triple Sec",15],["Malibu",15],["Orange Juice","top"],["Pineapple Juice","top"],["Grenadine","dash"]]],
+  ["Mangotini", [["Vodka",15],["Mangoyan",30],["Orange Juice","top"]]],
+  ["Manhattan", [["Jim Beam",90],["Cinzano Rosso",10],["Angostura Bitters","drops","2–3 drops"]]],
+  ["Margarita", [["Tequila",45],["Triple Sec",30],["Lemon Juice",5],["Lime Juice",5]], ["Salt rim"]],
+  ["Melon Ball", [["Vodka",15],["Melon",30],["Orange Juice","top"]]],
+  ["Midori Splice", [["Bacardi",20],["Melon",20],["Malibu",15],["Pineapple Juice","top"],["Milk","dash"]]],
+  ["Milky Way", [["Vodka",15],["White Cacao",15],["Baileys",15],["Milk","top"],["Vanilla","dash","3–4 dashes"]]],
+  ["Mudslide", [["Vodka",15],["Baileys",15],["Kahlua",15],["Butterscotch",15],["Milk","top"],["Chocolate Syrup",null]]],
+  ["Orange Blossom", [["Gin",30],["Triple Sec",15],["Orange Juice","top"]]],
+  ["Peachteatini", [["Vodka",15],["Peach",30],["Oolong Tea",30],["Ginger Ale","dash","Splash"]]],
+  ["Peachy", [["Peach",30],["Southern Comfort",15],["Grenadine",5],["Orange Juice","top"]]],
+  ["Pine Vanilla", [["Vodka",45],["Pineapple Juice","top"],["Vanilla","dash","3–4 dashes"]]],
+  ["Pink Pussycat", [["Gin",45],["Pineapple Juice","top"],["Grapefruit Juice","top"],["Grenadine","dash"]]],
+  ["Pornstar", [["Vodka",30],["Vanilla","drops","5 drops"],["Passoa",30],["Lime Juice","dash"],["Orange Juice","top"]]],
+  ["Purple Haze", [["Vodka",30],["Blue Curacao",15],["Cranberry Juice","top"]]],
+  ["Rolls Royce", [["Gin",30],["Cinzano Dry",10,null,"Dry Vermouth"],["Cinzano Rosso",10],["Grapefruit Juice","top"]]],
+  ["Sicilian Kiss", [["Southern Comfort",45],["Amaretto",15],["Lemon Juice",5],["Lime Juice",5]]],
+  ["Sourtini", [["Vodka",15],["Lemon Juice",10],["Fresh Lemon","squeeze","Fresh squeeze"],["Grapefruit Juice","top"]]],
+  ["Strawberrytini", [["Vodka",15],["Strawberry",30],["Milk","top"]]],
+  ["Sunset", [["Gin",45],["Lime Juice",10],["Cranberry Juice","top"]]],
+  ["Verry Berry", [["Vodka",15],["Blueberry",15],["Strawberry",15],["Cranberry Juice","top"]]],
+  ["Wet Pussy", [["Vodka",30],["Peach",15],["Lime Juice",5],["Cranberry Juice","top"]]],
+  ["White Lady", [["Gin",60],["Triple Sec",30],["Lemon Juice",15]]],
+  ["Woo Woo", [["Vodka",15],["Cassis",30],["Peach",15],["Cranberry Juice","top"],["Orange Juice","top"]]],
+  ["XYZ", [["Bacardi",60],["Triple Sec",30],["Lemon Juice",15]]],
+  ["Zoolander", [["Vodka",15],["Passoa",30],["Peach",15],["Lime Juice",5],["Orange Juice","top"]]],
+];
+
+// Ingredient families, used to choose believable wrong answers
+const FAMILY = {
+  spirit: ["Vodka","Gin","Bacardi","Myers","Tequila","Jim Beam","Southern Comfort","Citron Jenever","Cherry Brandy"],
+  liqueur: ["Apple Liqueur","Get 27","Baileys","Strawberry","Banana","Blueberry","Blue Curacao","Butterscotch","Kahlua","Frangelico","Triple Sec","Cacao Brown","White Cacao","Mangoyan","Peach","Cassis","Lychee","Melon","Malibu","Passoa","Amaretto"],
+  vermouth: ["Dry Vermouth","Cinzano Rosso","Cinzano Bianco","Angostura Bitters"],
+  mixer: ["Lime Juice","Lemon Juice","Fresh Lemon","Orange Juice","Pineapple Juice","Cranberry Juice","Grapefruit Juice","Ginger Ale","Milk","Iced Coffee","Oolong Tea"],
+  extra: ["Vanilla","Grenadine","Chocolate Syrup","Olive","Olive Brine"],
+};
+const FAMILY_OF = {};
+for (const [f, list] of Object.entries(FAMILY)) for (const k of list) FAMILY_OF[k] = f;
+
+const ML = [5,10,15,20,30,45,60,90,100];
+const OTHER = ["dash","drops","squeeze","top"];
+const AMOUNTS = [...ML, ...OTHER];
+const lab = a => typeof a === "number" ? a + "ml" : ({top:"Top up", dash:"Dash", drops:"Drops", squeeze:"Squeeze"})[a] || "";
+
+const DRINKS = RAW.map(([name, ings, notes = []]) => ({
+  name,
+  notes,
+  ings: ings.map(([n, a, t, k]) => ({ n, a, t: t || lab(a), k: k || n })),
+}));
+const ALL_KEYS = [...new Set(DRINKS.flatMap(d => d.ings.map(i => i.k)))].sort();
+
+// ---------- Helpers ----------
+const $ = id => document.getElementById(id);
+const rand = arr => arr[Math.floor(Math.random() * arr.length)];
+const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+};
+
+function recipeCard(d) {
+  const rows = d.ings.map(i => `<li><span>${i.n}</span><span class="amt">${i.t}</span></li>`).join("");
+  const notes = d.notes.length
+    ? `<div class="rc-n"><b>Finish</b>${d.notes.map(n => `<span class="tag">${n}</span>`).join("")}</div>` : "";
+  return `<div class="rc"><div class="rc-h">${d.name}</div><ul class="rc-l">${rows}</ul>${notes}</div>`;
+}
+
+// ---------- Tabs ----------
+function setMode(mode) {
+  for (const t of document.querySelectorAll(".tab")) t.setAttribute("aria-selected", String(t.dataset.mode === mode));
+  for (const m of ["study","build","quiz"]) $(m).hidden = m !== mode;
+  store.set("cinque-mode", mode);
+  if (mode === "build" && !build.d) newBuild(rand(DRINKS));
+  if (mode === "quiz" && !quiz.q) nextQuestion();
+  window.scrollTo(0, 0);
+}
+document.querySelector(".tabs").addEventListener("click", e => {
+  const t = e.target.closest(".tab"); if (t) setMode(t.dataset.mode);
+});
+
+// ---------- Study ----------
+let deck = DRINKS.map((_, i) => i), pos = 0, revealed = false;
+function renderFlash() {
+  const d = DRINKS[deck[pos]];
+  $("flashCount").textContent = `${pos + 1} / ${deck.length}`;
+  $("flashName").textContent = d.name;
+  $("flashName").hidden = revealed;
+  $("flashBody").innerHTML = recipeCard(d);
+  $("flashBody").hidden = !revealed;
+  $("flashHint").textContent = revealed ? "Tap to hide" : "Say the recipe, then tap to check";
+}
+function toggleFlash() { revealed = !revealed; renderFlash(); }
+$("flash").addEventListener("click", toggleFlash);
+$("flash").addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleFlash(); } });
+$("next").addEventListener("click", () => { pos = (pos + 1) % deck.length; revealed = false; renderFlash(); });
+$("prev").addEventListener("click", () => { pos = (pos - 1 + deck.length) % deck.length; revealed = false; renderFlash(); });
+$("shuffle").addEventListener("click", () => { deck = shuffle(deck); pos = 0; revealed = false; renderFlash(); });
+
+function renderMenu() {
+  const q = $("search").value.trim().toLowerCase();
+  const list = DRINKS.filter(d => !q || d.name.toLowerCase().includes(q) || d.ings.some(i => i.n.toLowerCase().includes(q) || i.k.toLowerCase().includes(q)));
+  $("menuGrid").innerHTML = list.length ? list.map(recipeCard).join("") : `<p class="empty">No drinks match “${q.replace(/[<>&]/g, "")}”.</p>`;
+}
+$("search").addEventListener("input", renderMenu);
+function setStudyView(menu) {
+  $("s-cards").classList.toggle("on", !menu);
+  $("s-menu").classList.toggle("on", menu);
+  $("cardsView").hidden = menu;
+  $("menuView").hidden = !menu;
+}
+$("s-cards").addEventListener("click", () => setStudyView(false));
+$("s-menu").addEventListener("click", () => setStudyView(true));
+
+// ---------- Build ----------
+const build = { d: null, chips: [], picked: new Set(), phase: "ing", amt: {} };
+
+$("bSelect").innerHTML = `<option value="">Choose a drink…</option>` + DRINKS.map((d, i) => `<option value="${i}">${d.name}</option>`).join("");
+$("bSelect").addEventListener("change", e => { if (e.target.value !== "") newBuild(DRINKS[+e.target.value]); });
+$("bRandom").addEventListener("click", () => {
+  let d; do { d = rand(DRINKS); } while (DRINKS.length > 1 && d === build.d);
+  newBuild(d);
+});
+
+function makeChips(d) {
+  const real = new Set(d.ings.map(i => i.k));
+  const set = new Set(real);
+  // one look-alike per real ingredient, from the same family
+  for (const k of shuffle([...real])) {
+    const sib = shuffle(FAMILY[FAMILY_OF[k] || "extra"]).find(x => !set.has(x));
+    if (sib) set.add(sib);
+  }
+  let target = Math.min(12, Math.max(10, real.size * 2 + 2));
+  if (target % 2) target++;
+  for (const k of shuffle(ALL_KEYS)) { if (set.size >= target) break; set.add(k); }
+  return shuffle([...set]);
+}
+
+function newBuild(d) {
+  Object.assign(build, { d, chips: makeChips(d), picked: new Set(), phase: "ing", amt: {} });
+  $("bSelect").value = String(DRINKS.indexOf(d));
+  renderBuild();
+}
+
+function renderBuild() {
+  const { d, chips, picked, phase } = build;
+  const real = new Set(d.ings.map(i => i.k));
+  const checked = phase !== "ing";
+  let h = `<h2 class="dname">${d.name}</h2>`;
+
+  // Step 1
+  h += `<div class="step"><div class="step-h"><span class="step-n">Step 1</span>Pick every ingredient</div>`;
+  h += `<p class="sub">Tap everything that goes in. Order doesn’t matter.</p><div class="chips">`;
+  for (const k of chips) {
+    let cls = "chip", mk = "";
+    if (!checked) { if (picked.has(k)) cls += " sel"; }
+    else if (real.has(k) && picked.has(k)) { cls += " ok"; mk = "✓"; }
+    else if (real.has(k)) { cls += " missed"; mk = "missed"; }
+    else if (picked.has(k)) { cls += " wrong"; mk = "✕"; }
+    else cls += " dim";
+    h += `<button class="${cls}" data-chip="${k}" ${checked ? "disabled" : ""} aria-pressed="${picked.has(k)}">${k}${mk ? `<span class="mk">${mk}</span>` : ""}</button>`;
+  }
+  h += `</div>`;
+  if (!checked) {
+    h += `<button class="btn" id="checkIng" ${picked.size ? "" : "disabled"}>Check ingredients</button>`;
+  } else {
+    const found = [...real].filter(k => picked.has(k)).length;
+    const missed = [...real].filter(k => !picked.has(k));
+    const wrong = [...picked].filter(k => !real.has(k));
+    const perfect = !missed.length && !wrong.length;
+    let msg = perfect ? `All ${real.size} ingredients, nothing extra.` : `${found} of ${real.size} found.`;
+    if (missed.length) msg += ` Missed: ${missed.join(", ")}.`;
+    if (wrong.length) msg += ` Not in this drink: ${wrong.join(", ")}.`;
+    h += `<p class="fb ${perfect ? "ok" : "bad"}">${msg}</p>`;
+  }
+  h += `</div>`;
+
+  // Step 2
+  if (checked) {
+    const rows = d.ings.filter(i => i.a !== null);
+    const done = phase === "done";
+    h += `<div class="step"><div class="step-h"><span class="step-n">Step 2</span>Set the amounts</div>`;
+    rows.forEach(i => {
+      const idx = d.ings.indexOf(i);
+      const pickedA = build.amt[idx];
+      h += `<div class="arow"><div class="aname">${i.n}</div>`;
+      if (!done) {
+        h += `<div class="abtns">` + AMOUNTS.map(a =>
+          `<button class="ab${pickedA === a ? " sel" : ""}" data-row="${idx}" data-amt="${a}">${lab(a)}</button>`).join("") + `</div>`;
+      } else {
+        const right = pickedA === i.a;
+        const note = i.t !== lab(i.a) ? ` (${i.t})` : "";
+        h += right
+          ? `<div class="ares ok">✓ ${lab(i.a)}${note}</div>`
+          : `<div class="ares bad">✕ You chose ${lab(pickedA)}. Correct: <b>${lab(i.a)}</b>${note}</div>`;
+      }
+      h += `</div>`;
+    });
+    if (!done) {
+      const left = rows.filter(i => build.amt[d.ings.indexOf(i)] === undefined).length;
+      h += `<button class="btn" id="checkAmt" ${left ? "disabled" : ""}>${left ? `Choose ${left} more` : "Check amounts"}</button>`;
+    }
+    h += `</div>`;
+  }
+
+  // Result
+  if (phase === "done") {
+    h += recipeCard(d);
+    h += `<div class="row"><button class="btn ghost" id="again">Try again</button><button class="btn red" id="nextDrink">Next drink</button></div>`;
+  }
+  $("bStage").innerHTML = h;
+}
+
+$("bStage").addEventListener("click", e => {
+  const chip = e.target.closest("[data-chip]");
+  if (chip && build.phase === "ing") {
+    const k = chip.dataset.chip;
+    build.picked.has(k) ? build.picked.delete(k) : build.picked.add(k);
+    renderBuild(); return;
+  }
+  const ab = e.target.closest("[data-amt]");
+  if (ab && build.phase === "amt") {
+    const v = ab.dataset.amt;
+    build.amt[+ab.dataset.row] = isNaN(+v) ? v : +v;
+    renderBuild(); return;
+  }
+  const id = e.target.closest("button")?.id;
+  if (id === "checkIng") { build.phase = "amt"; renderBuild(); }
+  if (id === "checkAmt") { build.phase = "done"; renderBuild(); }
+  if (id === "again") newBuild(build.d);
+  if (id === "nextDrink") $("bRandom").click();
+});
+
+// ---------- Quiz ----------
+const quiz = { q: null, answered: false, last: "" };
+
+function qAmount() {
+  const d = rand(DRINKS);
+  const i = rand(d.ings.filter(x => x.a !== null));
+  const correct = lab(i.a);
+  let wrong;
+  if (typeof i.a === "number") {
+    wrong = shuffle(ML.filter(n => n !== i.a).sort((x, y) => Math.abs(x - i.a) - Math.abs(y - i.a)).slice(0, 5)).slice(0, 3).map(lab);
+  } else {
+    wrong = shuffle(["top","dash","drops",15,30].filter(x => x !== i.a)).slice(0, 3).map(lab);
+  }
+  return { kind: "Amount", text: `How much <b>${i.n}</b> goes in a <b>${d.name}</b>?`, opts: shuffle([correct, ...wrong]), correct, d,
+    extra: i.t !== correct ? `The sheet says: ${i.t}` : "" };
+}
+function qName() {
+  const d = rand(DRINKS);
+  const keys = new Set(d.ings.map(i => i.k));
+  const others = shuffle(DRINKS.filter(x => x !== d))
+    .sort((a, b) => b.ings.filter(i => keys.has(i.k)).length - a.ings.filter(i => keys.has(i.k)).length)
+    .slice(0, 6);
+  const opts = shuffle([d.name, ...shuffle(others).slice(0, 3).map(x => x.name)]);
+  const list = `<ul class="qlist">${shuffle(d.ings).map(i => `<li><span>${i.n}</span><span class="amt">${i.t}</span></li>`).join("")}</ul>`;
+  return { kind: "Name the drink", text: `Which drink is this?`, list, opts, correct: d.name, d };
+}
+function qNot() {
+  const d = rand(DRINKS.filter(x => x.ings.length >= 3));
+  const keys = new Set(d.ings.map(i => i.k));
+  const shown = shuffle(d.ings).slice(0, 3);
+  const fam = FAMILY[FAMILY_OF[rand(shown).k] || "extra"];
+  const odd = shuffle(fam).find(k => !keys.has(k)) || shuffle(ALL_KEYS).find(k => !keys.has(k));
+  return { kind: "Odd one out", text: `Which of these is <u>not</u> in a <b>${d.name}</b>?`, opts: shuffle([...shown.map(i => i.n), odd]), correct: odd, d };
+}
+
+function nextQuestion() {
+  let q;
+  do { q = rand([qAmount, qName, qNot])(); } while (q.text + q.correct === quiz.last);
+  quiz.q = q; quiz.answered = false; quiz.last = q.text + q.correct;
+  renderQuiz();
+}
+
+function renderQuiz(choice) {
+  const q = quiz.q;
+  let h = `<div class="qcard"><div class="qkind">${q.kind}</div><p class="qtext">${q.text}</p>${q.list || ""}<div class="opts">`;
+  h += q.opts.map(o => {
+    let cls = "opt";
+    if (quiz.answered) { if (o === q.correct) cls += " ok"; else if (o === choice) cls += " wrong"; }
+    return `<button class="${cls}" data-opt="${o.replace(/"/g, "&quot;")}" ${quiz.answered ? "disabled" : ""}>${o}${quiz.answered && o === q.correct ? " ✓" : ""}${quiz.answered && o === choice && o !== q.correct ? " ✕" : ""}</button>`;
+  }).join("");
+  h += `</div>`;
+  if (quiz.answered) {
+    const right = choice === q.correct;
+    h += `<p class="fb ${right ? "ok" : "bad"}">${right ? "Correct." : `Not quite. The answer is <b>${q.correct}</b>.`}${q.extra ? " " + q.extra + "." : ""}</p>`;
+  }
+  h += `</div>`;
+  if (quiz.answered) h += recipeCard(q.d);
+  h += `<button class="btn ${quiz.answered ? "red" : "ghost"}" id="qNext">${quiz.answered ? "Next question" : "Skip"}</button>`;
+  $("qStage").innerHTML = h;
+}
+
+$("qStage").addEventListener("click", e => {
+  const o = e.target.closest("[data-opt]");
+  if (o && !quiz.answered) { quiz.answered = true; renderQuiz(o.dataset.opt); return; }
+  if (e.target.closest("#qNext")) { nextQuestion(); window.scrollTo(0, 0); }
+});
+
+// ---------- Start ----------
+renderFlash();
+renderMenu();
+const saved = store.get("cinque-mode");
+setMode(["study","build","quiz"].includes(saved) ? saved : "study");
+</script>
+
+</body>
+</html>
